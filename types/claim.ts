@@ -3,8 +3,8 @@
     id?: number;
     company: string ;
     model: string ;
-    serialNumber: string;
-    statusId: number;
+    serial_number: string;
+    status_id: number;
     action: string;
     time: string;
     date: string;

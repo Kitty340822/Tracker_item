@@ -1,3 +1,5 @@
 export * from "@/components/Spare"
 export * from "@/components/add"
 export * from "@/components/edit"
+export * from "@/components/loading"
+export * from "@/components/login/login_from"

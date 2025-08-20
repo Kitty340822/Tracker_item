@@ -2,7 +2,7 @@
 
 import React from "react";
 import { STATUS_CONFIG } from "@/contants";
-import { ClaimItem } from "@/types/claim"; // คุณอาจต้องสร้างไฟล์ type แยก
+import { ClaimItem } from "@/types/claim";
 
 interface EditClaimModalProps {
   claim: ClaimItem;
@@ -43,13 +43,13 @@ export function EditClaimModal({
           <input
             type="text"
             placeholder="หมายเลขเครื่อง"
-            value={claim.serialNumber}
-            onChange={(e) => onChange({ ...claim, serialNumber: e.target.value })}
+            value={claim.serial_number}
+            onChange={(e) => onChange({ ...claim, serial_number: e.target.value })}
             className="w-full p-3 border rounded-lg dark:bg-gray-700 dark:text-white"
           />
           <select
-            value={claim.statusId}
-            onChange={(e) => onChange({ ...claim, statusId: parseInt(e.target.value) })}
+            value={claim.status_id}
+            onChange={(e) => onChange({ ...claim, status_id: parseInt(e.target.value) })}
             className="w-full p-3 border rounded-lg dark:bg-gray-700 dark:text-white"
           >
             {Object.values(STATUS_CONFIG).map((status) => (

@@ -4,10 +4,10 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Plus, Settings, RefreshCw, Edit, Trash2, Eye, AlertCircle, CheckCircle } from 'lucide-react';
 import {STATUS_CONFIG} from "@/contants"
-import { EditClaimModal ,AddClaimModal } from "@/components/index"
+import { EditClaimModal ,AddClaimModal } from "@/components"
 
-const getStatusById = (statusId:number) => {
-  return Object.values(STATUS_CONFIG).find(status => status.id === statusId) || STATUS_CONFIG.PENDING;
+const getStatusById = (status_id:number) => {
+  return Object.values(STATUS_CONFIG).find(status => status.id === status_id) || STATUS_CONFIG.PENDING;
 };
 
 
@@ -15,104 +15,59 @@ interface Claim {
   id: number;
   company: string;
   model: string;
-  serialNumber: string;
-  statusId: number;
+  serial_number: string;
+  status_id: number;
   action: string;
   time: string;
-  lastUpdate?: string;
   date: string;
+  last_update?: string;
 }
 
 
 const api = {
   fetchClaims: async (): Promise<Claim[]> => {
-    try {
-      const res = await fetch('/api/claim', { 
-        method: 'GET',
-        headers: { 'Content-Type': 'application/json' }
-      });
-      
-      if (!res.ok) {
-        throw new Error(`HTTP error! status: ${res.status}`);
-       
-      }
-      console.log("[DEBUG: ]",res.status)
-      return await res.json();
-    } catch (error) {
-      console.error('Error fetching claims:', error);
-      return [];
-    }
+    const res = await fetch('/api/claim');
+    if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+    return res.json();
   },
 
-  createClaim: async (
-  claim: Omit<Claim, 'id' | 'lastUpdate'>
-): Promise<Claim> => {
-  try {
+  createClaim: async (claim: Omit<Claim, 'id' | 'last_update'>): Promise<Claim> => {
     const res = await fetch('/api/claim', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(claim),
     });
-
     if (!res.ok) {
-      let errorMessage = `HTTP error! status: ${res.status}`;
-      console.error('Error response:', res.status, res.statusText);
-      try {
-        const errorData = await res.json();
-        errorMessage = errorData.error || errorMessage;
-      } catch (error) {
-        console.log('Error parsing error response:', error);
-      }
-      throw new Error(errorMessage);
+      const errorData = await res.json();
+      throw new Error(errorData.error || `HTTP error! status: ${res.status}`);
     }
+    return res.json();
+  },
 
-    return await res.json() as Claim;
-  } catch (error) {
-    console.error('Error creating claim:', error);
-    throw new Error(
-      error instanceof Error ? error.message : 'Unknown error occurred'
-    );
-  }
-},
-
-
-  updateClaim: async (id: number, data: Partial<Claim>): Promise<Claim | null> => {
-    try {
-      const res = await fetch('/api/claim', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id, ...data }),
-      });
-      
-      if (!res.ok) {
-        const errorData = await res.json();
-        throw new Error(errorData.error || `HTTP error! status: ${res.status}`);
-      }
-      return await res.json(); 
-    } catch (error) {
-      console.error('Error updating claim:', error);
-      throw error;
+  updateClaim: async (id: number, data: Partial<Claim>): Promise<Claim> => {
+    const res = await fetch('/api/claim', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id, ...data }),
+    });
+    if (!res.ok) {
+      const errorData = await res.json();
+      throw new Error(errorData.error || `HTTP error! status: ${res.status}`);
     }
+    return res.json();
   },
 
   deleteClaim: async (id: number): Promise<boolean> => {
-    try {
-      const res = await fetch('/api/claim', {
-        method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id }),
-      });
-      
-      if (!res.ok) {
-        const errorData = await res.json();
-        throw new Error(errorData.error || `HTTP error! status: ${res.status}`);
-      }
-      
-      return true;
-    } catch (error) {
-      console.error('Error deleting claim:', error);
-      throw error;
+    const res = await fetch('/api/claim', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id }),
+    });
+    if (!res.ok) {
+      const errorData = await res.json();
+      throw new Error(errorData.error || `HTTP error! status: ${res.status}`);
     }
+    return true;
   },
 };
 
@@ -123,11 +78,11 @@ export default function ClaimTracker() {
   const [showEditForm, setShowEditForm] = useState(false);
   const [notification, setNotification] = useState<{type: 'success' | 'error', message: string} | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [newClaim, setNewClaim] = useState<Omit<Claim, 'id' | 'lastUpdate'>>({
+  const [newClaim, setNewClaim] = useState<Omit<Claim, 'id' | 'last_update'>>({
     company: '',
     model: '',
-    serialNumber: '',
-    statusId: STATUS_CONFIG.PENDING.id,
+    serial_number: '',
+    status_id: STATUS_CONFIG.PENDING.id,
     action: '',
     time: new Date().toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' }),
     date: new Date().toISOString().split('T')[0]
@@ -161,7 +116,7 @@ export default function ClaimTracker() {
   };
 
   const handleAddClaim = async () => {
-    if (!newClaim.company.trim() || !newClaim.model.trim() || !newClaim.serialNumber.trim()) {
+    if (!newClaim.company.trim() || !newClaim.model.trim() || !newClaim.serial_number.trim()) {
       showNotification('error', 'กรุณากรอกข้อมูลที่จำเป็น (บริษัท, รุ่นเครื่อง, หมายเลขเครื่อง)');
       return;
     }
@@ -176,7 +131,7 @@ export default function ClaimTracker() {
         }),
         company: newClaim.company.trim(),
         model: newClaim.model.trim(),
-        serialNumber: newClaim.serialNumber.trim(),
+        serial_number: newClaim.serial_number.trim(),
       };
       
       await api.createClaim(claimData);
@@ -186,8 +141,8 @@ export default function ClaimTracker() {
       setNewClaim({
         company: '',
         model: '',
-        serialNumber: '',
-        statusId: STATUS_CONFIG.PENDING.id,
+        serial_number: '',
+        status_id: STATUS_CONFIG.PENDING.id,
         action: '',
         time: '',
         date: new Date().toISOString().split('T')[0]
@@ -208,7 +163,7 @@ export default function ClaimTracker() {
   };
 
   const handleUpdateClaim = async () => {
-    if (!editingClaim?.company.trim() || !editingClaim.model.trim() || !editingClaim.serialNumber.trim()) {
+    if (!editingClaim?.company.trim() || !editingClaim.model.trim() || !editingClaim.serial_number.trim()) {
       showNotification('error', 'กรุณากรอกข้อมูลที่จำเป็น');
       return;
     }
@@ -219,7 +174,7 @@ export default function ClaimTracker() {
         ...editingClaim,
         company: editingClaim.company.trim(),
         model: editingClaim.model.trim(),
-        serialNumber: editingClaim.serialNumber.trim(),
+        serial_number: editingClaim.serial_number.trim(),
       };
 
       await api.updateClaim(editingClaim.id, updateData);
@@ -252,20 +207,20 @@ export default function ClaimTracker() {
     }
   };
 
-  const handleStatusChange = async (claimId: number, newStatusId: number) => {
+  const handleStatusChange = async (claimId: number, newstatus_id: number) => {
     try {
-      await api.updateClaim(claimId, { statusId: newStatusId });
+      await api.updateClaim(claimId, { status_id: newstatus_id });
       await loadClaims(); // รีโหลดข้อมูลใหม่
       
-      const statusName = getStatusById(newStatusId).name;
+      const statusName = getStatusById(newstatus_id).name;
       showNotification('success', `เปลี่ยนสถานะเป็น "${statusName}" สำเร็จ`);
     } catch (error: any) {
       showNotification('error', error.message || 'เกิดข้อผิดพลาดในการเปลี่ยนสถานะ');
     }
   };
 
-  const getClaimsByStatus = (statusId: number) => {
-    return claims.filter(claim => claim.statusId === statusId);
+  const getClaimsByStatus = (status_id: number) => {
+    return claims.filter(claim => claim.status_id === status_id);
   };
 
   const handleRefresh = async () => {
@@ -341,7 +296,7 @@ export default function ClaimTracker() {
         {/* Add Claim Modal */}
 {showAddForm && (
   <AddClaimModal
-    claim={newClaim}
+    claim={newClaim} // ใช้ newClaim แทน
     isSubmitting={isSubmitting}
     onClose={() => setShowAddForm(false)}
     onChange={(updated) => setNewClaim(updated)}
@@ -406,17 +361,17 @@ export default function ClaimTracker() {
                   </tr>
                 ) : (
                   claims.map((claim) => {
-                    const currentStatus = getStatusById(claim.statusId);
+                    const currentStatus = getStatusById(claim.status_id);
                     return (
                       <tr key={claim.id} className="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
                         <td className="px-6 py-4 text-sm text-gray-900 dark:text-gray-100 font-medium">{claim.company}</td>
                         <td className="px-6 py-4 text-sm text-gray-900 dark:text-gray-100">{claim.model}</td>
                         <td className="px-6 py-4 text-sm font-mono text-gray-900 dark:text-gray-100 bg-gray-50 dark:bg-gray-700 rounded px-2 py-1">
-                          {claim.serialNumber}
+                          {claim.serial_number}
                         </td>
                         <td className="px-6 py-4">
                           <select
-                            value={claim.statusId}
+                            value={claim.status_id}
                             onChange={(e) => handleStatusChange(claim.id, parseInt(e.target.value))}
                             className={`px-3 py-1 text-xs font-medium rounded-full border cursor-pointer ${currentStatus.color} hover:opacity-80 transition-opacity`}
                           >
@@ -430,7 +385,7 @@ export default function ClaimTracker() {
                         </td>
                         <td className="px-6 py-4 text-sm text-gray-900 dark:text-gray-100">{claim.time || '-'}</td>
                         <td className="px-6 py-4 text-sm text-gray-900 dark:text-gray-100">{claim.date || '-'}</td>
-                        <td className="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">{claim.lastUpdate || '-'}</td>
+                        <td className="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">{claim.last_update || '-'}</td>
                         <td className="px-6 py-4">
                           <div className="flex gap-1">
                             <button 
@@ -495,9 +450,6 @@ export default function ClaimTracker() {
               <div className="text-sm text-blue-600 dark:text-blue-400">รายการทั้งหมด</div>
             </div>
             <div className="text-center p-4 bg-green-50 dark:bg-green-900/20 rounded-lg">
-              {/* <div className="text-2xl font-bold text-green-600 dark:text-green-400">
-                {getClaimsByStatus(STATUS_CONFIG.COMPLETED.id).length + getClaimsByStatus(STATUS_CONFIG.APPROVED.id).length}
-              </div> */}
               <div className="text-sm text-green-600 dark:text-green-400">เสร็จสิ้น/อนุมัติ</div>
             </div>
             <div className="text-center p-4 bg-orange-50 dark:bg-orange-900/20 rounded-lg">
